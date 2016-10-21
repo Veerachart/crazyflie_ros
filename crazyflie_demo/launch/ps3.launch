@@ -10,8 +10,8 @@
     <param name="z_axis" value="2"/>
     <param name="yaw_axis" value="1"/>
     <param name="x_velocity_max" value="30"/>
-    <param name="y_velocity_max" value="-30"/>
-    <param name="z_velocity_max" value="60000"/>
+    <param name="y_velocity_max" value="0"/>
+    <param name="z_velocity_max" value="32767"/>
     <param name="yaw_velocity_max" value="-200"/>
   </node>
 </launch>

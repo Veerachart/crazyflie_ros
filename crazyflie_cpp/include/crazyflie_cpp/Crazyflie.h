@@ -73,7 +73,7 @@ public:
     float roll,
     float pitch,
     float yawrate,
-    uint16_t thrust);
+    int32_t thrust);
 
   void sendPing();
 
