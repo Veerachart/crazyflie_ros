@@ -16,7 +16,6 @@ int main(int argc, char **argv)
   bool enable_parameters;
   bool use_ros_time;
   bool enable_logging_imu;
-  bool enable_logging_stabilizer;
   bool enable_logging_temperature;
   bool enable_logging_magnetic_field;
   bool enable_logging_pressure;
@@ -30,7 +29,6 @@ int main(int argc, char **argv)
   n.param("enable_parameters", enable_parameters, true);
   n.param("use_ros_time", use_ros_time, true);
   n.param("enable_logging_imu", enable_logging_imu, true);
-  n.param("enable_logging_stabilizer", enable_logging_stabilizer, true);
   n.param("enable_logging_temperature", enable_logging_temperature, true);
   n.param("enable_logging_magnetic_field", enable_logging_magnetic_field, true);
   n.param("enable_logging_pressure", enable_logging_pressure, true);
@@ -49,7 +47,6 @@ int main(int argc, char **argv)
   addCrazyflie.request.enable_parameters = enable_parameters;
   addCrazyflie.request.use_ros_time = use_ros_time;
   addCrazyflie.request.enable_logging_imu = enable_logging_imu;
-  addCrazyflie.request.enable_logging_stabilizer = enable_logging_stabilizer;
   addCrazyflie.request.enable_logging_temperature = enable_logging_temperature;
   addCrazyflie.request.enable_logging_magnetic_field = enable_logging_magnetic_field;
   addCrazyflie.request.enable_logging_pressure = enable_logging_pressure;
