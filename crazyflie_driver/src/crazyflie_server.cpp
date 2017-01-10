@@ -5,6 +5,7 @@
 #include "crazyflie_driver/UpdateParams.h"
 #include "std_srvs/Empty.h"
 #include "geometry_msgs/Twist.h"
+#include "geometry_msgs/Vector3.h"
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/Temperature.h"
 #include "sensor_msgs/MagneticField.h"
@@ -39,6 +40,7 @@ public:
     std::vector<crazyflie_driver::LogBlock>& log_blocks,
     bool use_ros_time,
     bool enable_logging_imu,
+    bool enable_logging_stabilizer,
     bool enable_logging_temperature,
     bool enable_logging_magnetic_field,
     bool enable_logging_pressure,
@@ -53,6 +55,7 @@ public:
     , m_logBlocks(log_blocks)
     , m_use_ros_time(use_ros_time)
     , m_enable_logging_imu(enable_logging_imu)
+    , m_enable_logging_stabilizer(enable_logging_stabilizer)
     , m_enable_logging_temperature(enable_logging_temperature)
     , m_enable_logging_magnetic_field(enable_logging_magnetic_field)
     , m_enable_logging_pressure(enable_logging_pressure)
@@ -61,6 +64,7 @@ public:
     , m_serviceUpdateParams()
     , m_subscribeCmdVel()
     , m_pubImu()
+    , m_pubStabilizer()
     , m_pubTemp()
     , m_pubMag()
     , m_pubPressure()
@@ -75,6 +79,9 @@ public:
 
     if (m_enable_logging_imu) {
       m_pubImu = n.advertise<sensor_msgs::Imu>(tf_prefix + "/imu", 10);
+    }
+    if (m_enable_logging_stabilizer) {
+      m_pubStabilizer = n.advertise<geometry_msgs::Vector3>(tf_prefix + "/stabilizer", 10);
     }
     if (m_enable_logging_temperature) {
       m_pubTemp = n.advertise<sensor_msgs::Temperature>(tf_prefix + "/temperature", 10);
@@ -107,6 +114,12 @@ private:
     float gyro_x;
     float gyro_y;
     float gyro_z;
+  } __attribute__((packed));
+  
+  struct logStabilizer {
+    float stabilizer_roll;
+    float stabilizer_pitch;
+    float stabilizer_yaw;
   } __attribute__((packed));
 
   struct log2 {
@@ -240,6 +253,7 @@ private:
     }
 
     std::unique_ptr<LogBlock<logImu> > logBlockImu;
+    std::unique_ptr<LogBlock<logStabilizer> > logBlockStabilizer;
     std::unique_ptr<LogBlock<log2> > logBlock2;
     std::vector<std::unique_ptr<LogBlockGeneric> > logBlocksGeneric(m_logBlocks.size());
     if (m_enableLogging) {
@@ -263,6 +277,18 @@ private:
             {"gyro", "z"},
           }, cb));
         logBlockImu->start(1); // 10ms
+      }
+      
+      if (m_enable_logging_stabilizer) {
+        std::function<void(uint32_t, logStabilizer*)> cb1 = std::bind(&CrazyflieROS::onStabilizerData, this, std::placeholders::_1, std::placeholders::_2);
+        
+        logBlockStabilizer.reset(new LogBlock<logStabilizer>(
+          &m_cf,{
+            {"stabilizer", "roll"},
+            {"stabilizer", "pitch"},
+            {"stabilizer", "yaw"},
+          }, cb1));
+        logBlockStabilizer->start(1); // 10ms
       }
 
       if (   m_enable_logging_temperature
@@ -358,6 +384,26 @@ private:
       m_pubImu.publish(msg);
     }
   }
+  
+  void onStabilizerData(uint32_t time_in_ms, logStabilizer* data) {
+    if (m_enable_logging_stabilizer) {
+      geometry_msgs::Vector3 msg;
+      //if (m_use_ros_time) {
+      //  msg.header.stamp = ros::Time::now();
+      //} else {
+      //  msg.header.stamp = ros::Time(time_in_ms / 1000.0);
+      //}
+      //msg.header.frame_id = m_tf_prefix + "/base_link";
+      //msg.orientation_covariance[0] = -1;
+
+      // measured in deg; need to convert to rad
+      msg.x = degToRad(data->stabilizer_roll);
+      msg.y = degToRad(data->stabilizer_pitch);
+      msg.z = degToRad(data->stabilizer_yaw);
+      
+      m_pubStabilizer.publish(msg);
+    }
+  }
 
   void onLog2Data(uint32_t time_in_ms, log2* data) {
 
@@ -445,6 +491,7 @@ private:
   std::vector<crazyflie_driver::LogBlock> m_logBlocks;
   bool m_use_ros_time;
   bool m_enable_logging_imu;
+  bool m_enable_logging_stabilizer;
   bool m_enable_logging_temperature;
   bool m_enable_logging_magnetic_field;
   bool m_enable_logging_pressure;
@@ -454,6 +501,7 @@ private:
   ros::ServiceServer m_serviceUpdateParams;
   ros::Subscriber m_subscribeCmdVel;
   ros::Publisher m_pubImu;
+  ros::Publisher m_pubStabilizer;
   ros::Publisher m_pubTemp;
   ros::Publisher m_pubMag;
   ros::Publisher m_pubPressure;
@@ -488,6 +536,7 @@ bool add_crazyflie(
     req.log_blocks,
     req.use_ros_time,
     req.enable_logging_imu,
+    req.enable_logging_stabilizer,
     req.enable_logging_temperature,
     req.enable_logging_magnetic_field,
     req.enable_logging_pressure,

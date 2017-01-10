@@ -7,6 +7,7 @@ bool enable_parameters
 LogBlock[] log_blocks
 bool use_ros_time
 bool enable_logging_imu
+bool enable_logging_stabilizer
 bool enable_logging_temperature
 bool enable_logging_magnetic_field
 bool enable_logging_pressure
